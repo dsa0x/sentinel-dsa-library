@@ -1,0 +1,28 @@
+import "strings"
+import "tfplan/v2" as tfplan
+import "types"
+
+# enumerate protected resource_types
+protected_resource_types = [
+    "aws_ecs_cluster",
+    "aws_ecs_service",
+    "aws_iam_role",
+    "aws_lb",
+    "aws_lb_listener",
+    "aws_lb_target_group",
+    "aws_route53_record",
+    "aws_security_group",
+]
+
+# check for protected resources where the planned changes include "delete"
+resource_destroy_violations = filter tfplan.resource_changes as _, rc {
+    protected_resource_types contains rc.type and rc.change.actions contains "delete"
+}
+
+resource_destroy_violations_present = rule {
+    length(resource_destroy_violations) > 0
+}
+
+main = rule {
+    !resource_destroy_violations_present
+}
